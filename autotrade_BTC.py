@@ -3,8 +3,8 @@ import datetime
 import pyupbit
 import numpy as np
 
-access = "access key"          # 본인 값으로 변경
-secret = "secret key"          # 본인 값으로 변경
+access = ""          # 본인 값으로 변경
+secret = ""          # 본인 값으로 변경
 
 def get_ror(k):
     df = pyupbit.get_ohlcv("KRW-BTC", count=21)
@@ -77,16 +77,16 @@ have_best_K = 0
 best_K = get_best_K()    
 have_best_K = 1
 
-#손절 factor 초기화
-loss_factor = 0.1
-loss_applied = 1-loss_factor
+# 손절 factor 초기화
+# loss_factor = 0.1
+# loss_applied = 1-loss_factor
 
 # 초기 종목 매수 진행 여부 
-BTC_buy = 0
+# BTC_buy = 0
 
 # 종목 매입 수량 및 평가금액
-BTC_buy_volume = 0
-BTC_buy_value = 0
+# BTC_buy_volume = 0
+# BTC_buy_value = 0
 
 # 누적 수수료 정보
 trade_fee = 0.0
@@ -105,9 +105,11 @@ print("종료시간: ", real_end_time)
 
 print()
 print("현재 원화 잔고:", krw_balance)
+print("현재 BTC 잔고:", get_balance("BTC"))
 print()
 
 print("현재 Best K 값: ", best_K)
+print("have_best_K: ", have_best_K)
 print()
 
 print()
@@ -126,8 +128,8 @@ while True:
             # 하루 지난 경우
             if have_best_K == 0:
                 print()
-                print()
-                print("하루가 지났습니다. 다시 매매 시작합니다")
+                print("------------------------------------")
+                print("장이 다시 시작합니다. 매매 시작합니다")
                 print ("현재시각: ", now)
                 print("시작시간: ", start_time)
                 print("종료시간: ", real_end_time)
@@ -147,11 +149,11 @@ while True:
 
             BTC_target_price = get_target_price("KRW-BTC", best_K)
             BTC_current_price = get_current_price("KRW-BTC")
-            print("BTC_current_price", BTC_current_price)
-            print("BTC_target_price", BTC_target_price)
+            # print("BTC_current_price", BTC_current_price)
+            # print("BTC_target_price", BTC_target_price)
             if BTC_target_price < BTC_current_price:
                 krw_balance = get_balance("KRW")
-                if BTC_buy == 0 and krw_balance >= 10000:
+                if krw_balance >= 10000:
                     print("BTC 매수 진행 - 목표가 도달")                   
                     print("현재 BTC 가격 * 매수금액 = 매수 BTC 수량")
 
@@ -161,23 +163,23 @@ while True:
                     upbit.buy_market_order("KRW-BTC", krw_balance)
                     print(get_current_price("KRW-BTC"), krw_balance, get_balance("BTC"))
 
-                    BTC_buy_volume = get_balance("BTC")
-                    BTC_buy_value = get_balance("BTC")*get_current_price("KRW-BTC")
-                    BTC_buy = 1
-                    print("BTC_buy:", BTC_buy)
+                    #BTC_buy_volume = get_balance("BTC")
+                    #BTC_buy_value = get_balance("BTC")*get_current_price("KRW-BTC")
+                    #BTC_buy = 1
+                    #print("BTC_buy:", BTC_buy)
                     print("적용된 Best K: ", best_K)
                     print("원화 잔고", get_balance("KRW"))
-                    print("BTC 매입 수량", BTC_buy_volume)
-                    print("BTC 평가 금액", BTC_buy_value)
+                    print("BTC 매입 수량", get_balance("BTC"))
+                    print("BTC 평가 금액", get_balance("BTC")*get_current_price("KRW-BTC"))
                     print("매매 수수료(매수):", trade_fee)
                     print("BTC 매수 완료")
                     print("-------------")
                     print()
                 else:
-                    print("이미 매수한 상태, 더 이상 매수하지 않습니다")
+                    print("장마감 전이고 목표가에 도달했지만, 이미 매수한 상태, 더 이상 매수하지 않습니다")
                     print()    
             else:
-                print("BTC 목표가 도달하지 않아 매수 하지 않습니다")
+                print("장마감 전이고, BTC 목표가 도달하지 않아 매수 하지 않습니다")
                 print()
         else:
             print()
@@ -186,32 +188,28 @@ while True:
 
             # Best K 리셋
             have_best_K = 0
+            BTC_current_value = get_balance("BTC")*get_current_price("KRW-BTC")
 
-            if BTC_buy == 0:
-                print("BTC 목표가 도달하지 않아 매수 하지 않았습니다", BTC_buy)
-                print("따라서 BTC 매수않아 매도하지 않습니다", BTC_buy)
-                print()
-            else:
-                print("BTC 매수 진행 했음: 매수수량:", BTC_buy_volume)
-
-                BTC_current_value = get_balance("BTC")*get_current_price("KRW-BTC")
+            if BTC_current_value >= 10000:
+                print("BTC 매수 진행 했음")
 
                 print("매수 BTC 수량:", get_balance("BTC")) 
-                print("매수 초기 BTC 평가금액:", BTC_buy_value)
                 print("현재 BTC 평가금액:", BTC_current_value)
+                print()
                 
                 if BTC_current_value > 10000:
-                    print("BTC 매도 진행합니다: 매도수량:", BTC_buy_volume)
+                    print("BTC 매도 진행합니다")
+                    print("BTC 매도수량: ", get_balance("BTC"))
+                    print("BTC 매도금액: ", BTC_current_value)
                     upbit.sell_market_order("KRW-BTC", get_balance("BTC"))
                     trade_fee = trade_fee + krw_balance*0.0005
 
-                    print("BTC 매매정보 초기화합니다")
-                    BTC_buy = 0
-                    BTC_buy_volume = 0
-                    BTC_buy_value = 0
-                    print("BTC 매매정보: ", BTC_buy)
-                    print("BTC 매수수량: ", BTC_buy_volume)
-                    print("BTC 매도금액: ", BTC_current_value)
+                    #print("BTC 매매정보 초기화합니다")
+                    #BTC_buy = 0
+                    #BTC_buy_volume = 0
+                    #BTC_buy_value = 0
+                    #print("BTC 매매정보: ", BTC_buy)
+                    
                     print("매매 수수료(매도):", trade_fee)
                     print("------------")
                     print()
